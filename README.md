@@ -32,7 +32,7 @@ python JSQL.py
 ```
 
 ## Important Notes
-- **Customization:** You may want to customize the parameter extraction logic based on the target application’s specific forms and structure.
+- **Customization:** You may want to customize the parameter's names based on the target application’s specific forms and structure (Ex: email, password).
 - **Authorization:** Ensure that you have permission to test the target web application. Unauthorized testing is illegal and unethical.
 - **Use Cases:** This tool is primarily intended for educational purposes, security research, and authorized penetration testing.
 
