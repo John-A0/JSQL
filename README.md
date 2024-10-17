@@ -20,7 +20,7 @@ You can install the required libraries using pip:
 pip install requests beautifulsoup4 colorama
 ```
 
-Usage
+## Usage
 1-Clone this repository to your local machine:
 ```bash
 git clone https://github.com/John-A0/JSQL.git
