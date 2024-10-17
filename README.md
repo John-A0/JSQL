@@ -1,4 +1,4 @@
-# JSQL - SQL-Injection Automation Tool
+# JSQL - SQL-Injection Automation Script
 
 ## Description
 This Python-based SQL Injection Automation Tool is designed to help security researchers and penetration testers automate the process of testing web applications for SQL injection vulnerabilities. The tool sends various SQL payloads to specified endpoints and checks for successful injections based on the application's responses.
